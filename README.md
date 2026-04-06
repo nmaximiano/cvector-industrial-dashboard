@@ -16,11 +16,41 @@ docker compose up --build
 
 Open http://localhost:3000 to view the dashboard.
 
-This starts four services:
-- **PostgreSQL** on port 5432 — schema auto-created on first run
-- **Live data generator** — seeds 24 hours of historical sensor data, then continuously inserts new readings every 30 seconds
-- **FastAPI backend** on http://localhost:8000 — API docs available at http://localhost:8000/docs
-- **React frontend** on http://localhost:3000 — auto-polls the backend every 10 seconds
+## Services
+
+The system runs four Docker containers:
+
+| Service | Container | Port | Description |
+|---------|-----------|------|-------------|
+| `db` | PostgreSQL 16 | 5432 | Database - schema auto-created via `init.sql` on first run |
+| `backend` | Python FastAPI | 8000 | REST API - docs at http://localhost:8000/docs |
+| `frontend` | Node + Vite | 3000 | React dashboard - hot reloads in dev via volume mount |
+| `live-data` | Python script | - | Seeds 24h of historical data, then inserts new readings every 30s |
+
+### Managing individual services
+
+Rebuild a single service after code changes:
+```bash
+docker compose up --build backend -d
+```
+
+Pause/unpause a service without restarting (preserves state):
+```bash
+docker compose pause live-data
+docker compose unpause live-data
+```
+
+Stop/start a service (re-runs the container command on start):
+```bash
+docker compose stop live-data
+docker compose start live-data
+```
+
+View logs for a specific service:
+```bash
+docker compose logs backend
+docker compose logs live-data --follow
+```
 
 ## Stopping
 
@@ -35,38 +65,7 @@ docker compose down -v
 docker compose up --build
 ```
 
-## Adding Facilities, Assets, and Metrics
-
-All data definitions live in `backend/db/seed.py`. No frontend or backend code changes are needed.
-
-**Add a facility** — add an entry to `FACILITIES`:
-```python
-{"name": "Eastside Manufacturing", "location": "Detroit, MI", "type": "manufacturing"}
-```
-
-**Add assets** — add entries to `ASSETS_BY_FACILITY` under the facility name:
-```python
-"Eastside Manufacturing": [
-    {"name": "Press A", "type": "press"},
-],
-```
-
-**Define an asset type's metrics** — add to `ASSET_METRIC_CONFIG`:
-```python
-"press": [
-    {"metric": "vibration", "unit": "mm/s", "base": 4.5, "variance": 2, "volatility": 0.5},
-    {"metric": "power_consumption", "unit": "kW", "base": 600, "variance": 100, "volatility": 0.7},
-],w
-```
-
-**Add a new metric type** — just use a new `metric` name in the config above. Optionally add a display label and color in `frontend/src/config/metrics.ts`:
-```ts
-vibration: { label: "Vibration", color: "#eb2f96" },
-```
-
-Unknown metrics fall back to auto-formatted labels and a default color, so this step is optional.
-
-After changes, reseed: `docker compose down -v && docker compose up --build -d`
+The `-v` flag removes the database volume, wiping all data. Without it, data persists across restarts.
 
 ## Architecture
 
@@ -74,9 +73,11 @@ After changes, reseed: `docker compose down -v && docker compose up --build -d`
 Facility (1) → (many) Assets (1) → (many) Sensor Readings
 ```
 
-- **Database**: PostgreSQL with three tables — `facilities`, `assets`, `sensor_readings`
+- **Database**: PostgreSQL with three tables - `facilities`, `assets`, `sensor_readings`
 - **Backend**: Python FastAPI with SQLAlchemy ORM, serving REST endpoints with filtering by facility, asset, metric, and time range
 - **Frontend**: React + TypeScript + Vite + Ant Design + Recharts, with auto-polling and localStorage persistence
+
+The frontend polls the backend every 10 seconds for live data. All facility, asset, and metric discovery is dynamic - the frontend has no hardcoded knowledge of what exists in the database. New facilities, assets, or metric types added to the backend are automatically picked up by the frontend without code changes or restarts.
 
 ## API Endpoints
 
@@ -95,3 +96,7 @@ Facility (1) → (many) Assets (1) → (many) Sensor Readings
 - **Backend**: Python, FastAPI, SQLAlchemy
 - **Database**: PostgreSQL
 - **Infrastructure**: Docker Compose
+
+Total hours of work: 5-7
+
+Environment variables (such as DB URL) are hard-coded for the sake of the prototype.

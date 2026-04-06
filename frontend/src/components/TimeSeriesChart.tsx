@@ -32,7 +32,6 @@ export default function TimeSeriesChart({ facilityId, assetId, metricName, timeR
         asset_id: assetId,
         metric_name: metricName,
         start_time: start,
-        limit: 2000,
       });
     }, [facilityId, assetId, metricName, timeRange]),
     10000,
@@ -71,14 +70,19 @@ export default function TimeSeriesChart({ facilityId, assetId, metricName, timeR
     timeMap.get(timeKey)![`asset_${r.asset_id}`] = r.value;
   }
 
+  const now = Date.now();
+  const rangeStart = now - timeRange * 60 * 1000;
+
   const chartData = [...timeMap.entries()]
     .map(([time, values]) => ({
-      time: new Date(time).toLocaleTimeString(),
+      ts: new Date(time.endsWith("Z") ? time : time + "Z").getTime(),
       ...values,
     }))
-    .reverse();
+    .sort((a, b) => a.ts - b.ts);
 
   const unit = readings[0]?.unit || "";
+
+  const formatTime = (ts: number) => new Date(ts).toLocaleTimeString();
 
   return (
     <div style={wrapperStyle}>
@@ -89,9 +93,9 @@ export default function TimeSeriesChart({ facilityId, assetId, metricName, timeR
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" tick={{ fontSize: 11 }} interval="preserveStartEnd" label={{ value: "Time", position: "insideBottom", offset: -5, fontSize: 12, fill: "#666" }} />
+            <XAxis dataKey="ts" type="number" domain={[rangeStart, now]} tick={{ fontSize: 11 }} tickFormatter={formatTime} interval="preserveStartEnd" label={{ value: "Time", position: "insideBottom", offset: -5, fontSize: 12, fill: "#666" }} />
             <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} label={{ value: `${label} (${unit})`, angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#666" }, fontSize: 12 }} />
-            <Tooltip />
+            <Tooltip labelFormatter={formatTime} />
             {assetIds.map((id) => (
               <Line
                 key={id}

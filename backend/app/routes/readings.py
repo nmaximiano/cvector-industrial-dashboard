@@ -18,7 +18,7 @@ def list_readings(
     metric_name: str | None = Query(None),
     start_time: datetime | None = Query(None),
     end_time: datetime | None = Query(None),
-    limit: int = Query(500, le=5000),
+    limit: int | None = Query(None),
     db: Session = Depends(get_db),
 ):
     query = db.query(SensorReading)
@@ -41,7 +41,10 @@ def list_readings(
     if end_time is not None:
         query = query.filter(SensorReading.timestamp <= end_time)
 
-    return query.order_by(desc(SensorReading.timestamp)).limit(limit).all()
+    query = query.order_by(desc(SensorReading.timestamp))
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 @router.get("/metrics/{asset_id}", response_model=list[str])

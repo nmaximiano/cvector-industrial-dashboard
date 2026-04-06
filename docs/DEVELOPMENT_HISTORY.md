@@ -125,8 +125,6 @@ cvector_industrial_dashboard/
 * Maybe keep summary stats constantly in view with some area to display 'warnings' ... progrommatically defined warnings based on metric values, movement, time of day etc.
 * Feature to decide timeframe [ 15 min | 1h | 2h | 8h | 24h | 1 weekok]
 
-## Seeding Strategy
-
 ## UX - Start to Finish
 
 The initial snapshot had a few problems. The first was an error that caused the entire app to crash and for the page to just appear white.

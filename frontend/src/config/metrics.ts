@@ -4,6 +4,7 @@ export const METRIC_CONFIG: Record<string, { label: string; color: string }> = {
   temperature: { label: "Temperature", color: "#1890ff" },
   pressure: { label: "Pressure", color: "#722ed1" },
   irradiance: { label: "Irradiance", color: "#13c2c2" },
+  vibration: { label: "Vibration", color: "#eb2f96" },
 };
 
 export function getMetricLabel(name: string): string {
