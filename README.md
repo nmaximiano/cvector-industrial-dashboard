@@ -97,6 +97,6 @@ The frontend polls the backend every 10 seconds for live data. All facility, ass
 - **Database**: PostgreSQL
 - **Infrastructure**: Docker Compose
 
-Total hours of work: 5-7
+Total hours of work: ~4
 
 Environment variables (such as DB URL) are hard-coded for the sake of the prototype.
